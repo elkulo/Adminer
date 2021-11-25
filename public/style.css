@@ -1,0 +1,26 @@
+@import url("themes/hydra-dark-theme.css");
+
+body {
+  min-width: 1600px;
+  min-height: 800px;
+  height: auto;
+  background: #221f2e;
+}
+
+textarea {
+  min-width: 395px;
+  min-height: 300px;
+}
+
+#content {
+  height: 100%;
+}
+
+#menu {
+  min-width: 280px;
+  height: 100vh;
+}
+
+#lang {
+  bottom: 40px;
+}
