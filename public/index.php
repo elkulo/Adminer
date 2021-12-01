@@ -70,6 +70,8 @@ function auth_login()
 function auth_logout()
 {
   unset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+  header('Content-Type: text/plain; charset=utf-8');
+  exit('Logout');
 }
 
 function adminer_object()
@@ -100,6 +102,7 @@ switch (filter_input(INPUT_GET, 'request')) {
     break;
   case 'logout':
     auth_logout();
+    break;
   default:
     auth_login();
 }
