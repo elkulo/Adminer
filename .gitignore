@@ -102,3 +102,6 @@ package-lock.json
 # SQLite
 **/database/
 *.sql*
+
+# Two Factor
+secret.csv

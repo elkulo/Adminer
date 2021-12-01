@@ -1,29 +1,76 @@
 <?php
-define('ADMINER_FILE', __DIR__ . '/../inc/Adminer.php');
-define('AUTH_FILE', __DIR__ . '/../inc/GoogleAuthenticator.php');
+require_once __DIR__ . '/../inc/GoogleAuthenticator.php';
 
-function basic_auth_login()
+/*******************************************************/
+
+define('SITE_TITLE', 'Adminer');
+
+/*******************************************************/
+
+function auth_register()
 {
-  $hashes = [
-    'admin' => password_hash('hogehoge', PASSWORD_DEFAULT),
-  ];
+  try {
+    $ga = new PHPGangsta_GoogleAuthenticator();
 
-  if (
-    !isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) ||
-    !password_verify($_SERVER['PHP_AUTH_PW'], isset($hashes[$_SERVER['PHP_AUTH_USER']]) ? $hashes[$_SERVER['PHP_AUTH_USER']] : '$2y$10$abcdefghijklmnopqrstuv')
-  ) {
-    // 初回時または認証が失敗したとき
-    header('WWW-Authenticate: Basic realm="Enter username and password."');
+    // 秘密鍵の生成
+    $secret = $ga->createSecret();
+
+    // ユーザー名
+    $user = filter_input(INPUT_GET, 'user');
+    if (!$user) {
+      throw new Exception('403 forbidden.');
+    }
+
+    // QRコードURLの生成と表示
+    $qr_code = $ga->getQRCodeGoogleUrl($user, $secret, SITE_TITLE);
+
+    header('Content-Type: text/html; charset=utf-8');
+    echo "<p>秘密鍵：{$secret}</p>";
+    echo "<p><img src=\"{$qr_code}\" /></p>";
+    exit;
+  } catch (Exception $e) {
     header('Content-Type: text/plain; charset=utf-8');
-    exit('403 forbidden.');
+    exit($e->getMessage());
   }
 }
 
-function basic_auth_logout()
+/*******************************************************/
+
+function auth_login()
+{
+  try {
+    $ga = new PHPGangsta_GoogleAuthenticator();
+    $discrepancy = 2;
+
+    $users = [];
+    $f = fopen(__DIR__ . '/../secret.csv', 'r');
+    while ($data = fgetcsv($f)) {
+      if (isset($data[0], $data[1])) {
+        $users[$data[0]] = $data[1];
+      }
+    }
+    fclose($f);
+
+    if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'], $users[$_SERVER['PHP_AUTH_USER']])) {
+      if (!$ga->verifyCode($users[$_SERVER['PHP_AUTH_USER']], $_SERVER['PHP_AUTH_PW'], $discrepancy)) {
+        throw new Exception('403 forbidden.');
+      }
+    } else {
+      throw new Exception('403 forbidden.');
+    }
+  } catch (Exception $e) {
+    header('WWW-Authenticate: Basic realm="Enter username and password."');
+    header('Content-Type: text/plain; charset=utf-8');
+    exit($e->getMessage());
+  }
+}
+
+/*******************************************************/
+
+function auth_logout()
 {
   unset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 }
-//basic_auth_logout();
 
 function adminer_object()
 {
@@ -31,7 +78,7 @@ function adminer_object()
   {
     function name()
     {
-      return 'Adminer | el.kulo';
+      return SITE_TITLE;
     }
     function css()
     {
@@ -45,11 +92,18 @@ function adminer_object()
   };
 }
 
-if (file_exists(ADMINER_FILE)) {
-  basic_auth_login();
-  require_once ADMINER_FILE;
-} else {
-  header('HTTP/1.1 404 Not Found');
-  header('Content-Type: text/plain; charset=utf-8');
-  exit('404 not found.');
+/*******************************************************/
+
+switch (filter_input(INPUT_GET, 'request')) {
+  case 'register':
+    auth_register();
+    break;
+  case 'logout':
+    auth_logout();
+  default:
+    auth_login();
 }
+
+/*******************************************************/
+
+require_once __DIR__ . '/../inc/Adminer.php';
