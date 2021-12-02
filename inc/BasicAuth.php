@@ -7,6 +7,8 @@ require_once __DIR__ . '/GoogleAuthenticator.php';
 class BasicAuth
 {
 
+  private const PW_FILE = __DIR__ . '/../.htpasswd';
+
   /**
    * __construct
    *
@@ -48,9 +50,30 @@ class BasicAuth
       // QRコードURLの生成と表示
       $qr_code = $ga->getQRCodeGoogleUrl($user, $secret, SITE_TITLE);
 
+      // ユーザー確認
+      if (file_exists(static::PW_FILE)) {
+        $f = fopen(static::PW_FILE, 'r');
+        while ($data = fgetcsv($f, 0, ':')) {
+          if (isset($data[0], $data[1])) {
+            $this->login();
+          }
+        }
+        fclose($f);
+      } else {
+        throw new Exception('403 forbidden.');
+      }
+
       header('Content-Type: text/html; charset=utf-8');
-      echo "<p>秘密鍵：{$secret}</p>";
-      echo "<p><img src=\"{$qr_code}\" /></p>";
+      printf(
+        '<!DOCTYPE html><html><head><meta charset="UTF-8" /><title>%1$s</title><meta name="robots" content="noindex,follow" /></head>
+          <body style="background:#1c1b22;color:#fff;text-align:center;">
+            <p>秘密鍵</p><p>%2$s</p><p><img src="%3$s" /></p>
+          </body>
+        </html>',
+        SITE_TITLE . ' | 登録',
+        $secret,
+        $qr_code
+      );
       exit;
     } catch (Exception $e) {
       header('Content-Type: text/plain; charset=utf-8');
@@ -70,13 +93,18 @@ class BasicAuth
       $discrepancy = 2;
 
       $users = [];
-      $f = fopen(__DIR__ . '/../secret.csv', 'r');
-      while ($data = fgetcsv($f)) {
-        if (isset($data[0], $data[1])) {
-          $users[$data[0]] = $data[1];
+
+      if (file_exists(static::PW_FILE)) {
+        $f = fopen(static::PW_FILE, 'r');
+        while ($data = fgetcsv($f, 0, ':')) {
+          if (isset($data[0], $data[1])) {
+            $users[$data[0]] = $data[1];
+          }
         }
+        fclose($f);
+      } else {
+        throw new Exception('403 forbidden.');
       }
-      fclose($f);
 
       if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'], $users[$_SERVER['PHP_AUTH_USER']])) {
         if (!$ga->verifyCode($users[$_SERVER['PHP_AUTH_USER']], $_SERVER['PHP_AUTH_PW'], $discrepancy)) {
@@ -100,7 +128,15 @@ class BasicAuth
   private function logout()
   {
     unset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
-    header('Content-Type: text/plain; charset=utf-8');
-    exit('Logout');
+    header('Content-Type: text/html; charset=utf-8');
+    printf(
+      '<!DOCTYPE html><html><head><meta charset="UTF-8" /><title>%1$s</title><meta name="robots" content="noindex,follow" /></head>
+        <body style="background:#1c1b22;color:#fff;text-align:center;">
+          <p>See you ヾ(*´∀｀*)ﾉ</p>
+        </body>
+      </html>',
+      SITE_TITLE . ' | ログアウト'
+    );
+    exit;
   }
 }
