@@ -103,5 +103,5 @@ package-lock.json
 **/database/
 *.sql*
 
-# Two Factor
-secret.csv
+# htacces
+.htpasswd
