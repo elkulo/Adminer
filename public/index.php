@@ -1,8 +1,8 @@
 <?php
 define('SITE_TITLE', 'Adminer');
 
-require_once __DIR__ . '/../inc/BasicAuth.php';
-new BasicAuth();
+require_once __DIR__ . '/../inc/OTPBasicAuth.php';
+new OTPBasicAuth();
 
 function adminer_object()
 {
