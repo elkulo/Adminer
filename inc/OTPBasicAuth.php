@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/GoogleAuthenticator.php';
 
+defined('SITE_TITLE') || define('SITE_TITLE', 'Adminer');
+
 /**
  * OTPBasicAuth
  */
