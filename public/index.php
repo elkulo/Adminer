@@ -1,7 +1,6 @@
 <?php
-define('SITE_TITLE', 'Adminer');
-
-require_once __DIR__ . '/../inc/OTPBasicAuth.php';
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../adminer/OTPBasicAuth.php';
 new OTPBasicAuth();
 
 function adminer_object()
@@ -23,4 +22,4 @@ function adminer_object()
     }
   };
 }
-require_once __DIR__ . '/../inc/Adminer.php';
+require_once __DIR__ . '/../adminer/Adminer.php';

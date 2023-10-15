@@ -22,7 +22,7 @@ class OTPBasicAuth
       session_start();
     }
 
-    switch (filter_input(INPUT_GET, 'request')) {
+    switch (filter_input(INPUT_GET, 'p')) {
       case 'register':
         $this->register();
         break;
@@ -36,6 +36,8 @@ class OTPBasicAuth
 
   /**
    * register
+   * 
+   * NOTE: ?p=register&user=admin で登録ページ.
    *
    * @return void
    */
@@ -57,26 +59,22 @@ class OTPBasicAuth
       $qr_code = $ga->getQRCodeGoogleUrl($user, $secret, SITE_TITLE);
 
       // ユーザー確認
-      if (file_exists(static::PW_FILE)) {
-        $f = fopen(static::PW_FILE, 'r');
-        while ($data = fgetcsv($f, 0, ':')) {
-          if (isset($data[0], $data[1])) {
-            $this->login();
-          }
-        }
-        fclose($f);
-      } else {
-        throw new Exception('403 forbidden.');
+      if (!file_exists(static::PW_FILE)) {
+        throw new Exception('htpasswd not found.');
       }
 
       header('Content-Type: text/html; charset=utf-8');
       printf(
         '<!DOCTYPE html><html><head><meta charset="UTF-8" /><title>%1$s</title><meta name="robots" content="noindex,follow" /></head>
-          <body style="background:#1c1b22;color:#fff;text-align:center;">
-            <p>秘密鍵</p><p>%2$s</p><p><img src="%3$s" /></p>
+          <h1>One-Time Password</h1>
+          <body style="background:#fff;color:#212121;text-align:center;">
+            <p>Copy to ".htpasswd"</p>
+            <p><input type="text" value="%2$s:%3$s" style="padding: 0.5em; width: 15em" /></p>
+            <p><img src="%4$s" /></p>
           </body>
         </html>',
         SITE_TITLE . ' | 登録',
+        htmlspecialchars($user, ENT_QUOTES, 'UTF-8'),
         $secret,
         $qr_code
       );
